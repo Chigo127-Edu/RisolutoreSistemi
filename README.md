@@ -1,17 +1,17 @@
-# Risolutore di sistemi di equazioni a N incognite
+# EquationSolver
+Risolutore di sistemi di equazioni lineari di primo grado.
+La soluzione dell'equazione sarà effettuata tramite il metodo di Cramer, che permette una soluzione semplice dell'equazione.
 
-## Percorso di svolgimento
-1. Creazione e gestione matrice incognite e vettore valori noti
-2. Stampa del sistema
-3. Risoluzione del sistema tramite determinante
+## Roadmap
+- [x] Input e stampa del sistema di equazioni in maniera *user friendly* (input di un coefficiente per volta)
+- [ ] Soluzione di sistemi di 2 equazioni (calcolo del determinante: diagonale principale - diagonale secondaria)
+- [ ] Soluzione di sistemi di 3 equazioni (calcolo del determinante: metodo di Sarrus)
+- [ ] Soluzione di sistemi di N equazioni (calcolo del determinante: metodo di Laplace, implementato tramite **ricorsione**)
+- [ ] Input del sistema di equazioni da stringa (**parse della stringa** dell'equazione intera per trovare i coefficienti)
+- [ ] Input del sistema di equazioni da **file**
+- [ ] Implementazione di una opzione del programma per la scelta del metodo di input (tastiera o file) e del metodo di output (console o file) tramite l'array ***args*** del *main*.
 
-## Parte 1
-
-Scrivere un programma che chiede all'utente di inserire i coefficienti e i termini noti di un sistema di N equazioni lineari di primo grado a N incognite (con N specificato dall'utente), si salva ilrispettivamente in una matrice A dei coefficienti e in un array B dei termini noti, pronti per la risoluzione del sistema tramite Cramer (non va ancora risolto il sistema, solo preparate le matrici), e, dopo l'inserimento, mostra all'utente il sistema di equazioni scritto in maniera ben leggibile secondo un formato simile al seguente
-
-Ax1 + Bx2 + Cx3 = D
-
-## Riguardo il progetto
+## Riguardo il mio progetto
 
 Questo progetto è stato creato con:
 - Visual Studio Code
