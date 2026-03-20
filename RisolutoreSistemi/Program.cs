@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
+using System;
 
 namespace RisolutoreSistemi
 {
@@ -10,10 +8,10 @@ namespace RisolutoreSistemi
         {
             Console.WriteLine("Benvenuto! Questo programma permette di risolvere un sistema di equazioni a N incognite.");
 
-            int Dimensione = RichiestaInputSicuro("Si prega di inserire la dimensione della matrice");
+            int Dimensione = RichiestaDimens();
 
-            int[,] Matrice = new int[Dimensione, Dimensione];
-            int[] ValNoti = new int[Dimensione];
+            float[,] Matrice = new float[Dimensione, Dimensione];
+            float[] ValNoti = new float[Dimensione];
 
             RiempiValori(Dimensione, Matrice, ValNoti);
 
@@ -23,22 +21,45 @@ namespace RisolutoreSistemi
             }
         }
 
-        static int RichiestaInputSicuro(string Messaggio)
+        static float RichiestaInputSicuro(string Messaggio)
         {
             Console.Write(Environment.NewLine + Messaggio + ": ");
             bool Fail = false;
-            ushort Tempinput = 0;
+            float Tempinput = 0;
 
             do
             {
                 Fail = false;
                 try
                 {
-                    Tempinput = ushort.Parse(Console.ReadLine());
+                    Tempinput = float.Parse(Console.ReadLine());
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine(Environment.NewLine + "Il valore inserito non è valido, Riprovare: ");
+                    Console.Write(Environment.NewLine + "Il valore inserito non è valido, Riprovare: ");
+                    Fail = true;
+                }
+            } while (Fail);
+
+            return Tempinput;
+        }
+
+        static int RichiestaDimens()
+        {
+            Console.Write(Environment.NewLine + "Si prega di inserire la dimensione della matrice: ");
+            bool Fail = false;
+            int Tempinput = 0;
+
+            do
+            {
+                Fail = false;
+                try
+                {
+                    Tempinput = int.Parse(Console.ReadLine());
+                }
+                catch (Exception)
+                {
+                    Console.Write(Environment.NewLine + "Il valore inserito non è valido, Riprovare: ");
                     Fail = true;
                 }
             } while (Fail);
@@ -74,7 +95,7 @@ namespace RisolutoreSistemi
             }
         }
 
-        static void RiempiValori(int Dimensione, int[,] Matrice, int[] ValNoti)
+        static void RiempiValori(int Dimensione, float[,] Matrice, float[] ValNoti)
         {
             for (int Riga = 0; Riga < Dimensione; Riga++)
             {
@@ -87,7 +108,7 @@ namespace RisolutoreSistemi
             }
         }
 
-        static void StampaSistema(int Dimensione, int[,] Matrice, int[] ValNoti)
+        static void StampaSistema(int Dimensione, float[,] Matrice, float[] ValNoti)
         {
             Console.Write(Environment.NewLine);
             
@@ -97,7 +118,7 @@ namespace RisolutoreSistemi
                 {
                     Console.Write($"\t{Matrice[Riga,Colonna]}(x{Colonna+1})");
                 }
-                Console.Write($" = {ValNoti[Riga]}" + Environment.NewLine);
+                Console.Write($"\t=\t{ValNoti[Riga]}" + Environment.NewLine);
             }
         }
     }
