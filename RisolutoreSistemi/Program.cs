@@ -17,7 +17,7 @@ namespace RisolutoreSistemi
             // dichiarazione nulla (per ora) di matrice, vettore e dimensione
             float[,] Matrice = null;
             float[] ValNoti = null;
-            ushort Dimensione = 0;
+            short Dimensione = 0;
 
             // ciclo che itera fino a quando Continua = false
             do
@@ -127,7 +127,7 @@ namespace RisolutoreSistemi
             return Tempinput;
         }
 
-        static ushort RichiestaDimens() // Questa funzione è come l'altra ma solo per la dimensione (ushort).
+        static short RichiestaDimens() // Questa funzione è come l'altra ma solo per la dimensione (short).
         {
             Console.Write("Si prega di inserire la dimensione della matrice: ");
 
@@ -135,14 +135,14 @@ namespace RisolutoreSistemi
             bool Fail = false;
 
             // inizializz. temporanea
-            ushort Tempinput = 0;
+            short Tempinput = 0;
 
             do // stessa logica di RichiestaInputSicuro, ma il catch viene triggerato anche con valore negativo
             {
                 Fail = false;
                 try
                 {
-                    Tempinput = ushort.Parse(Console.ReadLine());
+                    Tempinput = short.Parse(Console.ReadLine());
                 }
                 catch (Exception)
                 {
@@ -154,13 +154,13 @@ namespace RisolutoreSistemi
             return Tempinput;
         }
 
-        static string FormaEspressioneNecessaria(ushort NIncognite) // Composizione stringa della forma di espressione
+        static string FormaEspressioneNecessaria(short NIncognite) // Composizione stringa della forma di espressione
         {
             // inizializzazione stringa nulla
             string TempString = "";
 
             // composizione stringa
-            for (ushort Indice = 1; Indice <= NIncognite; Indice++)
+            for (short Indice = 1; Indice <= NIncognite; Indice++)
             {
                 // 64 è il char prededente ad 'a', ma dato che i parte da 1, il primo char è 65, ovvero A.
                 TempString += $"{(char)(64 + Indice)}x{Indice} +/- ";
@@ -189,7 +189,7 @@ namespace RisolutoreSistemi
             }
         }
 
-        static void RiempimentoGuidato(ushort Dimensione, float[,] Matrice, float[] ValNoti)
+        static void RiempimentoGuidato(short Dimensione, float[,] Matrice, float[] ValNoti)
         {
             Console.Clear();
 
@@ -212,7 +212,7 @@ namespace RisolutoreSistemi
             }
         }
 
-        static void StampaSistema(ushort Dimensione, float[,] Matrice, float[] ValNoti)
+        static void StampaSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
         {
             Console.Clear();
 
@@ -227,9 +227,9 @@ namespace RisolutoreSistemi
             }
             Console.Write(Environment.NewLine);
 
-            for (ushort Riga = 0; Riga < Dimensione; Riga++)
+            for (short Riga = 0; Riga < Dimensione; Riga++)
             {
-                for (ushort Colonna = 0; Colonna < Dimensione; Colonna++)
+                for (short Colonna = 0; Colonna < Dimensione; Colonna++)
                 {
                     if (Matrice[Riga, Colonna] >= 0)
                     {
@@ -315,7 +315,7 @@ namespace RisolutoreSistemi
             Console.WriteLine("Il sistema è vuoto, premere qualunque tasto per tornare indietro...");
             Console.ReadKey();
         }
-        static float[] RisoluzioneSistema(ushort Dimensione, float[,] Matrice, float[] ValNoti)
+        static float[] RisoluzioneSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
         {
             switch (Dimensione)
             {
@@ -339,9 +339,10 @@ namespace RisolutoreSistemi
         {
             float[] Determinanti = new float[3];
 
-            Determinanti[0] = (Matrice[0, 0] * Matrice[1, 1]) - (Matrice[0, 1] * Matrice[1, 0]);
-            Determinanti[1] = (ValNoti[0] * Matrice[1, 1]) - (Matrice[0, 1] * ValNoti[1]);
-            Determinanti[2] = (Matrice[0, 0] * ValNoti[1]) - (ValNoti[0] * Matrice[1, 0]);
+            Determinanti[0] = (ValNoti[0] * Matrice[1, 1]) - (Matrice[0, 1] * ValNoti[1]); //Dx
+            Determinanti[1] = (Matrice[0, 0] * ValNoti[1]) - (ValNoti[0] * Matrice[1, 0]); //Dy
+            Determinanti[2] = (Matrice[0, 0] * Matrice[1, 1]) - (Matrice[0, 1] * Matrice[1, 0]); //D
+
 
             if (Determinanti[0] == 0)
             {
@@ -349,93 +350,105 @@ namespace RisolutoreSistemi
             }
             else
             {
-                return new float[] { (Determinanti[1] / Determinanti[0]), (Determinanti[2] / Determinanti[0]) };
+                // Ritorna Dx/D, Dy/D
+                return new float[] { (Determinanti[0] / Determinanti[2]), (Determinanti[1] / Determinanti[2]) };
             }
 
         }
 
         static float[] RisoluzioneSarrus(float[,] Matrice, float[] ValNoti)
         {
-            // CODICE NON FUNZIONANTE
-            /*
-            float[] Determinanti = new float[4];
+            float[] Vars = new float[4];
 
-            float Aggiunte = 0;
-            float Rimozioni = 0;
 
-            for (int incognita = 0; incognita < 3; incognita++)
+            for (short IndiceDeterm = 0; IndiceDeterm < 4; IndiceDeterm++)
             {
 
-                for (ushort Offset = 0; Offset < 4; Offset++)
+                float Accumulatore = 0;
+
+                if (IndiceDeterm == 3) // Determinante generico
                 {
-                    float Aggiunta;
-                    float Rimozione;
-                    if (Offset < 3)
+                    for (short Offset = 0; Offset < 3; Offset++)
                     {
-                        Aggiunta = 1;
-                        Rimozione = 1;
-                        for (ushort i = 0; i < 3; i++)
-                        {
-                            ushort DoveA = Periodo((ushort)(i + Offset), 3);
-                            ushort DoveR = Periodo((ushort)(2 - Offset - i), 3);
-                            if (Matrice[i, incognita] == Matrice[i, DoveA])
-                            {
-                                Aggiunta *= ValNoti[i];
-                            }
-                            else
-                            {
-                                Aggiunta *= Matrice[i, DoveA];
-                            }
-                            if (Matrice[i, incognita] == Matrice[i, DoveR])
-                            {
-                                Rimozione *= ValNoti[i];
-                            }
-                            else
-                            {
-                                Rimozione *= Matrice[i, DoveR];
-                            }
-                        }
-                        Aggiunte += Aggiunta;
-                        Rimozioni += Rimozione;
-                    }
-                    else
-                    {
-                        Aggiunta = 1;
-                        Rimozione = 1;
+                        // Moltiplicatore = 1
+                        float Moltiplicatore = 1;
 
-                        for (ushort i = 0; i < 3; i++)
+                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
                         {
-                            Aggiunta *= Matrice[i, i + Periodo(Offset, 3)];
-                            Rimozione *= Matrice[i, Periodo((ushort)(2 - Offset - i), 3)];
+                            // Moltiplica il moltiplicatore per la cella considerata ora
+                            Moltiplicatore *= Matrice[Spostamento, Periodo((short)(Spostamento + Offset), 3)];
                         }
 
-                        Aggiunte += Aggiunta;
-                        Rimozioni += Rimozione;
+                        Accumulatore += Moltiplicatore;
+                        Moltiplicatore = 1;
+
+                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                        {
+                            // Moltiplica il moltiplicatore per la cella considerata ora
+                            Moltiplicatore *= Matrice[Spostamento, Periodo((short)(2 - Spostamento - Offset), 3)];
+                        }
+
+                        Accumulatore -= Moltiplicatore;
                     }
                 }
-                Determinanti[incognita] = Aggiunte - Rimozioni;
+                else
+                {
+                    for (short Offset = 0; Offset < 3; Offset++)
+                    {
+                        // Moltiplicatore = 1
+                        float Moltiplicatore = 1;
+
+                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                        {
+                            // Se la colonna selezionata è quella considerata da rimpiazzare
+                            if (Periodo((short)(Spostamento+Offset),3) == IndiceDeterm)
+                            {
+                                Moltiplicatore *= ValNoti[Spostamento];
+                            }
+                            else
+                            {
+                                // Moltiplica il moltiplicatore per la cella considerata ora
+                                Moltiplicatore *= Matrice[Spostamento, Periodo((short)(Spostamento + Offset), 3)];
+                            }
+                        }
+
+                        Accumulatore += Moltiplicatore;
+                        Moltiplicatore = 1;
+
+                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                        {
+                            // Se la colonna selezionata è quella considerata da rimpiazzare
+                            if (Periodo((short)(2-Spostamento-Offset),3) == IndiceDeterm)
+                            {
+                                Moltiplicatore *= ValNoti[Spostamento];
+                            }
+                            else
+                            {
+                                // Moltiplica il moltiplicatore per la cella considerata ora
+                                Moltiplicatore *= Matrice[Spostamento, Periodo((short)(2 - Spostamento - Offset), 3)];
+                            }
+                        }
+
+                        Accumulatore -= Moltiplicatore;
+                    }
+                }
+
+                Vars[IndiceDeterm] = Accumulatore;
             }
 
-            if (Determinanti[3] == 0)
-            {
-                return null;
-            }
-            else
-            {
-                return new float[] { Determinanti[0] / Determinanti[3], Determinanti[1] / Determinanti[3], Determinanti[2] / Determinanti[3] };
-            }
-            */
-            return null; // Questo codice non funziona
+            DebugStampaVett(Vars);
+            Console.ReadKey();
+            return null; // da levare
         }
 
-        static ushort Periodo(ushort Numero, ushort Periodo)
+        static short Periodo(short Numero, short Periodo)
         {
             while (Numero < 0)
             {
                 Numero += Periodo;
             }
 
-            return (ushort)(Numero % Periodo); // Se indico la cella 4 ma la dimensione è 3, mi riferisco alla cella 1 (la seconda)
+            return (short)(Numero % Periodo); // Se indico la cella 4 ma la dimensione è 3, mi riferisco alla cella 1 (la seconda)
         }
         static void DebugSysProvaS(float[,] Matrice, float[] ValNoti)
         {
