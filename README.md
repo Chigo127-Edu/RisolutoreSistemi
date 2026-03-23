@@ -4,8 +4,8 @@ La soluzione dell'equazione sarà effettuata tramite il metodo di Cramer, che pe
 
 ## Roadmap
 - [x] Input e stampa del sistema di equazioni in maniera *user friendly* (input di un coefficiente per volta)
-- [ ] Soluzione di sistemi di 2 equazioni (calcolo del determinante: diagonale principale - diagonale secondaria)
-- [ ] Soluzione di sistemi di 3 equazioni (calcolo del determinante: metodo di Sarrus)
+- [x] Soluzione di sistemi di 2 equazioni (calcolo del determinante: diagonale principale - diagonale secondaria)
+- [x] Soluzione di sistemi di 3 equazioni (calcolo del determinante: metodo di Sarrus)
 - [ ] Soluzione di sistemi di N equazioni (calcolo del determinante: metodo di Laplace, implementato tramite **ricorsione**)
 - [ ] Input del sistema di equazioni da stringa (**parse della stringa** dell'equazione intera per trovare i coefficienti)
 - [ ] Input del sistema di equazioni da **file**
