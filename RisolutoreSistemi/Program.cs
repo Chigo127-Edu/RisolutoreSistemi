@@ -1,4 +1,6 @@
 using System;
+using System.Data.Common;
+using System.Runtime.Intrinsics.X86;
 using System.Runtime.Serialization;
 
 namespace RisolutoreSistemi
@@ -63,10 +65,6 @@ namespace RisolutoreSistemi
                                 case "0": // Ritorno indietro
                                     ContinuaRiempimento = false;
                                     break;
-                                case "/debug":
-                                    DebugSysProvaS(Matrice, ValNoti); // Sistema di debug
-                                    ContinuaRiempimento = false;
-                                    break;
                                 default: // Rifare la scelta
                                     ErroreRiempimento = true;
                                     break;
@@ -81,7 +79,7 @@ namespace RisolutoreSistemi
                         StampaSistema(Dimensione, Matrice, ValNoti);
                         break;
                     case "4": // risoluzione
-                        RisoluzioneSistema(Dimensione, Matrice, ValNoti);
+                        RisolviEMostraSistema(Dimensione, Matrice, ValNoti);
                         break;
                     case "0": // pulizia console e uscita. Continua = false perché non si deve fare altro
                         Console.Clear();
@@ -137,7 +135,7 @@ namespace RisolutoreSistemi
             // inizializz. temporanea
             short Tempinput = 0;
 
-            do // stessa logica di RichiestaInputSicuro, ma il catch viene triggerato anche con valore negativo
+            do
             {
                 Fail = false;
                 try
@@ -148,6 +146,12 @@ namespace RisolutoreSistemi
                 {
                     Console.Write(Environment.NewLine + "Il valore inserito non è valido, Riprovare: ");
                     Fail = true;
+                }
+
+                if (Tempinput < 0)
+                {
+                    Fail = true;
+                    Console.Write(Environment.NewLine + "Il valore inserito è negativo, Riprovare: ");
                 }
             } while (Fail);
 
@@ -170,7 +174,6 @@ namespace RisolutoreSistemi
             TempString = TempString.Remove(TempString.Length - 4) + $" = {(char)(65 + NIncognite)}";
 
             return TempString; // Esempio: Ax1 +/- Bx2 +/- Cx3 = D se la dimensione è 3.
-
         }
 
         static bool DomandaChiusa(string Messaggio) // Semplice interazione I/O per domanda chiusa
@@ -179,14 +182,9 @@ namespace RisolutoreSistemi
 
             string Tempinput = Console.ReadLine();
 
-            if (Tempinput == "y" || Tempinput == "Y")
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            // Op. ternario: Restituz. TRUE se l'input è Y o y
+            return Tempinput == "y" || Tempinput == "Y" ? true : false;
+
         }
 
         static void RiempimentoGuidato(short Dimensione, float[,] Matrice, float[] ValNoti)
@@ -196,7 +194,7 @@ namespace RisolutoreSistemi
             // Se il sistema è vuoto, segnalazione all'utente
             if (IlSistemaEVuoto(Matrice, ValNoti))
             {
-                SegnalaSistemaVuoto();
+                SegnalazioneUtente("Il sistema è vuoto. ");
             }
             else // altrimenti si procede
             {
@@ -219,7 +217,7 @@ namespace RisolutoreSistemi
             // Se il sistema è vuoto, segnalazione all'utente
             if (IlSistemaEVuoto(Matrice, ValNoti))
             {
-                SegnalaSistemaVuoto();
+                SegnalazioneUtente("Il sistema è vuoto. ");
             }
             else // altrimenti si procede
             {
@@ -227,10 +225,12 @@ namespace RisolutoreSistemi
             }
             Console.Write(Environment.NewLine);
 
+            // iterazione riga
             for (short Riga = 0; Riga < Dimensione; Riga++)
             {
+                // iteraziome colonna (Solo matrice)
                 for (short Colonna = 0; Colonna < Dimensione; Colonna++)
-                {
+                {   // aggiunta segno + se positivo
                     if (Matrice[Riga, Colonna] >= 0)
                     {
                         Console.Write($"\t+{Matrice[Riga, Colonna]}(x{Colonna + 1})");
@@ -240,10 +240,11 @@ namespace RisolutoreSistemi
                         Console.Write($"\t{Matrice[Riga, Colonna]}(x{Colonna + 1})");
                     }
                 }
+
+                // aggiunta segno + se positivo
                 if (ValNoti[Riga] >= 0)
                 {
                     Console.Write($"\t=\t+{ValNoti[Riga]}" + Environment.NewLine);
-
                 }
                 else
                 {
@@ -251,9 +252,7 @@ namespace RisolutoreSistemi
                 }
             }
 
-            // pausa perché la stampa è una cosa che interessa l'utente
-            Console.WriteLine(Environment.NewLine + "Premere qualunque tasto per tornare indietro...");
-            Console.ReadKey();
+            SegnalazioneUtente("");
         }
 
         static void StampaErroreMenu(bool Errore) // stringa da stampare a seconda del booleano errore
@@ -299,23 +298,26 @@ namespace RisolutoreSistemi
 
         static bool IlSistemaEVuoto(float[,] Matrice, float[] ValNoti)
         {
-            if (Matrice == null || ValNoti == null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return Matrice == null || ValNoti == null ? true : false;
         }
 
-        static void SegnalaSistemaVuoto()
+        static void SegnalazioneUtente(string Messaggio)
         {
             // pausa perché questa cosa interessa l'utente
-            Console.WriteLine("Il sistema è vuoto, premere qualunque tasto per tornare indietro...");
+            Console.WriteLine(Messaggio);
+            Console.WriteLine("Premere qualunque tasto per tornare indietro...");
             Console.ReadKey();
         }
-        static float[] RisoluzioneSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
+
+        static void RisolviEMostraSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
+        {
+            float[] Coordinate = RisolutoreSistema(Dimensione, Matrice, ValNoti);
+            if (Dimensione < 2 || Dimensione > 3) SegnalazioneUtente("Al momento non è possibile risolvere sistemi di dimensione al di fuori di 2 e 3.");
+            else if (Coordinate == null) SegnalazioneUtente("Il sistema è vuoto o irrisolvibile. ");
+            else SegnalazioneUtente($"Le coordinate-soluzione del sistema sono: {FormattaElenco(Coordinate)}");
+        }
+
+        static float[] RisolutoreSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
         {
             switch (Dimensione)
             {
@@ -325,14 +327,10 @@ namespace RisolutoreSistemi
                     return RisoluzioneSarrus(Matrice, ValNoti);
                 default:
                     // pausa perché questa cosa interessa l'utente
-                    Console.WriteLine("Avviso! Al momento non è possibile risolvere sistemi di {0} incognite!", Dimensione);
-                    Console.ReadKey();
-                    break;
+                    return null; // se con è possibile risolvere il sistema, il programma non beccherà gli altri return, arrivando qua
 
-                    // Da implementare Laplace
+                    // TODO: Da implementare Laplace
             }
-
-            return null; // se con è possibile risolvere il sistema, il programma non beccherà gli altri return, arrivando qua
         }
 
         static float[] RisoluzioneCramer(float[,] Matrice, float[] ValNoti)
@@ -343,7 +341,6 @@ namespace RisolutoreSistemi
             Determinanti[1] = (Matrice[0, 0] * ValNoti[1]) - (ValNoti[0] * Matrice[1, 0]); //Dy
             Determinanti[2] = (Matrice[0, 0] * Matrice[1, 1]) - (Matrice[0, 1] * Matrice[1, 0]); //D
 
-
             if (Determinanti[0] == 0)
             {
                 return null; // Il sistema è irrisolvibile in questo caso
@@ -353,125 +350,79 @@ namespace RisolutoreSistemi
                 // Ritorna Dx/D, Dy/D
                 return new float[] { (Determinanti[0] / Determinanti[2]), (Determinanti[1] / Determinanti[2]) };
             }
-
         }
 
         static float[] RisoluzioneSarrus(float[,] Matrice, float[] ValNoti)
         {
             float[] Vars = new float[4];
 
-
+            // Dx = 0; Dy = 1; Dz = 2; D = 3;
             for (short IndiceDeterm = 0; IndiceDeterm < 4; IndiceDeterm++)
             {
-
                 float Accumulatore = 0;
 
-                if (IndiceDeterm == 3) // Determinante generico
+                for (short Offset = 0; Offset < 3; Offset++)
                 {
-                    for (short Offset = 0; Offset < 3; Offset++)
-                    {
-                        // Moltiplicatore = 1
-                        float Moltiplicatore = 1;
+                    // Moltiplicatore = 1
+                    float Moltiplicatore = 1;
 
-                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                    for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                    {
+                        // Se la colonna selezionata è quella considerata da rimpiazzare
+                        if (IndiceDeterm != 3 && Periodo((short)(Spostamento + Offset), 3) == IndiceDeterm)
+                        {
+                            Moltiplicatore *= ValNoti[Spostamento];
+                        }
+                        else
                         {
                             // Moltiplica il moltiplicatore per la cella considerata ora
                             Moltiplicatore *= Matrice[Spostamento, Periodo((short)(Spostamento + Offset), 3)];
                         }
+                    }
 
-                        Accumulatore += Moltiplicatore;
-                        Moltiplicatore = 1;
+                    Accumulatore += Moltiplicatore;
+                    Moltiplicatore = 1;
 
-                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                    for (short Spostamento = 0; Spostamento < 3; Spostamento++)
+                    {
+                        // Se la colonna selezionata è quella considerata da rimpiazzare
+                        if (IndiceDeterm != 3 && Periodo((short)(2 - Spostamento - Offset), 3) == IndiceDeterm)
+                        {
+                            Moltiplicatore *= ValNoti[Spostamento];
+                        }
+                        else
                         {
                             // Moltiplica il moltiplicatore per la cella considerata ora
                             Moltiplicatore *= Matrice[Spostamento, Periodo((short)(2 - Spostamento - Offset), 3)];
                         }
-
-                        Accumulatore -= Moltiplicatore;
                     }
+
+                    Accumulatore -= Moltiplicatore;
                 }
-                else
-                {
-                    for (short Offset = 0; Offset < 3; Offset++)
-                    {
-                        // Moltiplicatore = 1
-                        float Moltiplicatore = 1;
-
-                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
-                        {
-                            // Se la colonna selezionata è quella considerata da rimpiazzare
-                            if (Periodo((short)(Spostamento+Offset),3) == IndiceDeterm)
-                            {
-                                Moltiplicatore *= ValNoti[Spostamento];
-                            }
-                            else
-                            {
-                                // Moltiplica il moltiplicatore per la cella considerata ora
-                                Moltiplicatore *= Matrice[Spostamento, Periodo((short)(Spostamento + Offset), 3)];
-                            }
-                        }
-
-                        Accumulatore += Moltiplicatore;
-                        Moltiplicatore = 1;
-
-                        for (short Spostamento = 0; Spostamento < 3; Spostamento++)
-                        {
-                            // Se la colonna selezionata è quella considerata da rimpiazzare
-                            if (Periodo((short)(2-Spostamento-Offset),3) == IndiceDeterm)
-                            {
-                                Moltiplicatore *= ValNoti[Spostamento];
-                            }
-                            else
-                            {
-                                // Moltiplica il moltiplicatore per la cella considerata ora
-                                Moltiplicatore *= Matrice[Spostamento, Periodo((short)(2 - Spostamento - Offset), 3)];
-                            }
-                        }
-
-                        Accumulatore -= Moltiplicatore;
-                    }
-                }
-
+                // Determinante considerato
                 Vars[IndiceDeterm] = Accumulatore;
             }
 
-            DebugStampaVett(Vars);
-            Console.ReadKey();
-            return null; // da levare
+            if (Vars[3] == 0) return null;
+            else return new float[] { Vars[0] / Vars[3], Vars[1] / Vars[3], Vars[2] / Vars[3] };
         }
 
-        static short Periodo(short Numero, short Periodo)
+        static short Periodo(short Numero, short Limite)
         {
-            while (Numero < 0)
+            while (Numero < 0) Numero += Limite;
+
+            return (short)(Numero % Limite); // Se indico la cella 4 ma la dimensione è 3, mi riferisco alla cella 1 (la seconda)
+        }
+
+        static string FormattaElenco(float[] Coordinate)
+        {
+            string TempString = "";
+            for (short Iteratore = 0; Iteratore < Coordinate.Length; Iteratore++)
             {
-                Numero += Periodo;
+                TempString += $"{Coordinate[Iteratore]}, ";
             }
 
-            return (short)(Numero % Periodo); // Se indico la cella 4 ma la dimensione è 3, mi riferisco alla cella 1 (la seconda)
-        }
-        static void DebugSysProvaS(float[,] Matrice, float[] ValNoti)
-        {
-            Matrice[0, 0] = 4;
-            Matrice[0, 1] = 6;
-            Matrice[0, 2] = -3;
-            ValNoti[0] = 0;
-            Matrice[1, 0] = 6;
-            Matrice[1, 1] = 3;
-            Matrice[1, 2] = -8;
-            ValNoti[1] = 7;
-            Matrice[2, 0] = -2;
-            Matrice[2, 1] = -4;
-            Matrice[2, 2] = 6;
-            ValNoti[2] = -2;
-        }
-
-        static void DebugStampaVett(float[] Vett)
-        {
-            for (int i = 0; i < Vett.Length; i++)
-            {
-                Console.WriteLine(Vett[i]);
-            }
+            return TempString.Remove(TempString.Length - 2) + ".";
         }
     }
 }
