@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.Reflection.Emit;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Serialization;
 
@@ -16,16 +17,17 @@ namespace RisolutoreSistemi
             bool Continua = true;
             bool Errore = false;
 
-            // dichiarazione nulla (per ora) di matrice, vettore e dimensione
+            // dichiarazione nulla (per ora) di matrice, vettore, soluzioni e dimensione
             float[,] Matrice = null;
             float[] ValNoti = null;
+            float[] Soluzioni = null;
             short Dimensione = 0;
 
             // ciclo che itera fino a quando Continua = false
             do
             {
                 // stampa menu principale, con booleano errore (Se è vero viene stampata una string apposita)
-                StampaMenuPrincipale(Errore);
+                StampaMenu(Errore, "MENU", "Principale");
 
                 // azzeramento condizione errore
                 Errore = false;
@@ -45,41 +47,73 @@ namespace RisolutoreSistemi
 
                         break;
                     case "2": // sottomenu, con propri booleani di continuo (per tornare indietro) ed errore 
-                        bool ContinuaRiempimento = true;
-                        bool ErroreRiempimento = false;
-
-                        do
                         {
-                            // la logica del sottomenu è identica a quella del menu principale
-                            StampaSottomenuRiempimento(ErroreRiempimento);
-                            ErroreRiempimento = false;
+                            bool ContinuaSottomenu = true;
+                            bool ErroreSottomenu = false;
 
-                            string SceltaRiempimento = Console.ReadLine();
-
-                            switch (SceltaRiempimento)
+                            do
                             {
-                                case "1": // riempimento guidato  (I/O). Ritorno al menu principale perché non serve più riempire
-                                    RiempimentoGuidato(Dimensione, Matrice, ValNoti);
-                                    ContinuaRiempimento = false;
-                                    break;
-                                case "0": // Ritorno indietro
-                                    ContinuaRiempimento = false;
-                                    break;
-                                default: // Rifare la scelta
-                                    ErroreRiempimento = true;
-                                    break;
+                                // la logica del sottomenu è identica a quella del menu principale
+                                StampaMenu(Errore, "RIEMPI", "Riempimento");
+                                ErroreSottomenu = false;
 
+                                string SceltaSottomenu = Console.ReadLine();
+
+                                switch (SceltaSottomenu)
+                                {
+                                    case "1": // riempimento guidato  (I/O). Ritorno al menu principale perché non serve più riempire
+                                        RiempimentoGuidato(Dimensione, Matrice, ValNoti);
+                                        ContinuaSottomenu = false;
+                                        break;
+                                    case "0": // Ritorno indietro
+                                        ContinuaSottomenu = false;
+                                        break;
+                                    default: // Rifare la scelta
+                                        ContinuaSottomenu = true;
+                                        break;
                                     // Sono da implementare: Input da file, input da stringa con parser
+                                }
                             }
+                            while (ContinuaSottomenu);
                         }
-                        while (ContinuaRiempimento);
-
                         break;
                     case "3": // stampa sistema
-                        StampaSistema(Dimensione, Matrice, ValNoti);
+                        {
+                            bool ContinuaSottomenu = true;
+                            bool ErroreSottomenu = false;
+
+                            do
+                            {
+                                // la logica del sottomenu è identica a quella del menu principale
+                                StampaMenu(Errore, "STAMPA O ESPORTA", "StampaEsportazione");
+                                ErroreSottomenu = false;
+
+                                string SceltaSottomenu = Console.ReadLine();
+
+                                switch (SceltaSottomenu)
+                                {
+                                    case "1": // riempimento guidato  (I/O). Ritorno al menu principale perché non serve più riempire
+                                        StampaSistema(Dimensione, Matrice, ValNoti);
+                                        ContinuaSottomenu = false;
+                                        break;
+                                    case "3":
+                                        StampaSoluzioni(Soluzioni);
+                                        ContinuaSottomenu = false;
+                                        break;
+                                    case "0": // Ritorno indietro
+                                        ContinuaSottomenu = false;
+                                        break;
+                                    default: // Rifare la scelta
+                                        ContinuaSottomenu = true;
+                                        break;
+                                        // Sono da implementare: Input da file, input da stringa con parser
+                                }
+                            }
+                            while (ContinuaSottomenu);
+                        }
                         break;
                     case "4": // risoluzione
-                        RisolviEMostraSistema(Dimensione, Matrice, ValNoti);
+                        Soluzioni = ComandoRisolviSistema(Dimensione, Matrice, ValNoti);
                         break;
                     case "0": // pulizia console e uscita. Continua = false perché non si deve fare altro
                         Console.Clear();
@@ -158,7 +192,7 @@ namespace RisolutoreSistemi
             return Tempinput;
         }
 
-        static string FormaEspressioneNecessaria(short NIncognite) // Composizione stringa della forma di espressione
+        static string FormaEspressioneEquazione(short NIncognite) // Composizione stringa della forma di espressione
         {
             // inizializzazione stringa nulla
             string TempString = "";
@@ -174,6 +208,20 @@ namespace RisolutoreSistemi
             TempString = TempString.Remove(TempString.Length - 4) + $" = {(char)(65 + NIncognite)}";
 
             return TempString; // Esempio: Ax1 +/- Bx2 +/- Cx3 = D se la dimensione è 3.
+        }
+
+        static string FormaEspressioneSoluzioni(float[] Soluzioni)
+        {
+            string TempString = "";
+
+            // composizione stringa
+            for (short Indice = 0; Indice < Soluzioni.Length; Indice++)
+            {
+                // 64 è il char prededente ad 'a', ma dato che i parte da 1, il primo char è 65, ovvero A.
+                TempString += $"x{Indice+1} = {Soluzioni[Indice]}, ";
+            }
+
+            return TempString.Remove(TempString.Length - 2) + ".";
         }
 
         static bool DomandaChiusa(string Messaggio) // Semplice interazione I/O per domanda chiusa
@@ -194,13 +242,13 @@ namespace RisolutoreSistemi
             // Se il sistema è vuoto, segnalazione all'utente
             if (IlSistemaEVuoto(Matrice, ValNoti))
             {
-                SegnalazioneUtente("Il sistema è vuoto. ");
+                SegnalazioneUtente("Il sistema è vuoto.");
             }
             else // altrimenti si procede
             {
                 for (int Riga = 0; Riga < Dimensione; Riga++)
                 {
-                    Console.WriteLine($"Verranno ora richiesti, passo-passo, i parametri della {Riga + 1}^ equazione" + Environment.NewLine + $"La forma deve essere {FormaEspressioneNecessaria(Dimensione)}.");
+                    Console.WriteLine($"Verranno ora richiesti, passo-passo, i parametri della {Riga + 1}^ equazione" + Environment.NewLine + $"La forma deve essere {FormaEspressioneEquazione(Dimensione)}");
                     for (int Colonna = 0; Colonna < Dimensione; Colonna++)
                     {
                         Matrice[Riga, Colonna] = RichiestaInputSicuro($"Inserire il parametro {(char)(65 + Colonna)}");
@@ -217,7 +265,7 @@ namespace RisolutoreSistemi
             // Se il sistema è vuoto, segnalazione all'utente
             if (IlSistemaEVuoto(Matrice, ValNoti))
             {
-                SegnalazioneUtente("Il sistema è vuoto. ");
+                SegnalazioneUtente("Il sistema è vuoto.");
             }
             else // altrimenti si procede
             {
@@ -255,6 +303,22 @@ namespace RisolutoreSistemi
             SegnalazioneUtente("");
         }
 
+        static void StampaSoluzioni(float[] Soluzioni)
+        {
+            Console.Clear();
+
+            // Se il sistema è vuoto, segnalazione all'utente
+            if (Soluzioni == null)
+            {
+                SegnalazioneUtente("Non è ancora stata ricavata la soluzione del sistema.");
+            }
+            else // altrimenti si procede
+            {
+                SegnalazioneUtente($"Le soluzioni sono: {FormaEspressioneSoluzioni(Soluzioni)}");
+            }
+            Console.Write(Environment.NewLine);
+        }
+
         static void StampaErroreMenu(bool Errore) // stringa da stampare a seconda del booleano errore
         {
             if (Errore)
@@ -267,33 +331,65 @@ namespace RisolutoreSistemi
             }
         }
 
-        static void StampaMenuPrincipale(bool Errore)
+        static void StampaMenu(bool Errore, string Label, string ID)
         {
             Console.Clear();
-
             StampaErroreMenu(Errore);
+            StampaCorniceMenu(Label);
 
-            Console.WriteLine("------======MENU======------");
-            Console.WriteLine("1. Crea sistema di N incognite");
-            Console.WriteLine("2. Riempi il sistema");
-            Console.WriteLine("3. Stampa il sistema");
-            Console.WriteLine("4. Risolvi il sistema");
-            Console.WriteLine("0. Esci");
+            switch (ID)
+            {
+                case "Principale":
+                    OutputMenuPrincipale();
+                    break;
+                case "Riempimento":
+                    OutputSottomenuRiempimento();
+                    break;
+                case "StampaEsportazione":
+                    OutputSottomenuStampaEsporta();
+                    break;
+            }
+
             Console.Write(Environment.NewLine + "Opzione scelta: ");
         }
 
-        static void StampaSottomenuRiempimento(bool Errore)
+        static void OutputMenuPrincipale()
         {
-            Console.Clear();
+            Console.Write(
+            Environment.NewLine + "1. Crea sistema di N incognite" +
+            Environment.NewLine + "2. Riempi il sistema" +
+            Environment.NewLine + "3. Stampa o esporta sistema e soluzioni" +
+            Environment.NewLine + "4. Risolvi il sistema" +
+            Environment.NewLine + "0. Esci" + Environment.NewLine);
+        }
 
-            StampaErroreMenu(Errore);
+        static void OutputSottomenuRiempimento()
+        {
+            Console.Write(
+            Environment.NewLine + "1. Riempi il sistema in modo guidato" +
+            Environment.NewLine + "2. [Non disponibile] Riempi il sistema inserendo direttamente le equazioni" +
+            Environment.NewLine + "3. [Non disponibile] Importa il sistema riempito tramite file" +
+            Environment.NewLine + "0. Torna indietro" + Environment.NewLine);
+        }
 
-            Console.WriteLine("------=====RIEMPI=====------");
-            Console.WriteLine("1. Riempi il sistema in modo guidato");
-            Console.WriteLine("2. [Non disponibile] Riempi il sistema inserendo direttamente le equazioni");
-            Console.WriteLine("3. [Non disponibile] Importa il sistema riempito tramite file");
-            Console.WriteLine("0. Torna indietro");
-            Console.Write(Environment.NewLine + "Opzione scelta: ");
+        static void OutputSottomenuStampaEsporta()
+        {
+            Console.Write(
+            Environment.NewLine + "1. Stampa il sistema a video" +
+            Environment.NewLine + "2. [Non disponibile] Esporta il sistema in un file" +
+            Environment.NewLine + "3. Stampa le soluzioni del sistema a video" +
+            Environment.NewLine + "4. [Non disponibile] Esporta le soluzioni in un file" +
+            Environment.NewLine + "0. Torna indietro" + Environment.NewLine);
+        }
+
+        static void StampaCorniceMenu(string Label)
+        {
+            Console.Write("   " + Label + Environment.NewLine);
+
+            for (int i = 0; i < Console.WindowWidth; i++)
+            {
+                Console.Write("\u2550");
+            }
         }
 
         static bool IlSistemaEVuoto(float[,] Matrice, float[] ValNoti)
@@ -309,18 +405,21 @@ namespace RisolutoreSistemi
             Console.ReadKey();
         }
 
-        static void RisolviEMostraSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
+        static float[] ComandoRisolviSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
         {
             float[] Coordinate = RisolutoreSistema(Dimensione, Matrice, ValNoti);
-            if (Dimensione < 2 || Dimensione > 3) SegnalazioneUtente("Al momento non è possibile risolvere sistemi di dimensione al di fuori di 2 e 3.");
-            else if (Coordinate == null) SegnalazioneUtente("Il sistema è vuoto o irrisolvibile. ");
-            else SegnalazioneUtente($"Le coordinate-soluzione del sistema sono: {FormattaElenco(Coordinate)}");
+            if (Dimensione > 3) SegnalazioneUtente("Al momento non è possibile risolvere sistemi/equazioni a più di 3 incognite.");
+            else if (Coordinate == null) SegnalazioneUtente("Il sistema è vuoto o irrisolvibile.");
+            return Coordinate;
         }
 
         static float[] RisolutoreSistema(short Dimensione, float[,] Matrice, float[] ValNoti)
         {
             switch (Dimensione)
             {
+                case 1:
+                    // non ha senso l'array monodimensionale, ma dovrei cambiare il tipo di ritrorno per un caso
+                    return new float[] { RisoluzioneEquaz(Matrice, ValNoti) };
                 case 2:
                     return RisoluzioneCramer(Matrice, ValNoti);
                 case 3:
@@ -333,6 +432,11 @@ namespace RisolutoreSistemi
             }
         }
 
+        static float RisoluzioneEquaz(float[,] Matrice, float[] ValNoti)
+        {
+            // Restituzione X
+            return ValNoti[0] / Matrice[0, 0];
+        }
         static float[] RisoluzioneCramer(float[,] Matrice, float[] ValNoti)
         {
             float[] Determinanti = new float[3];
